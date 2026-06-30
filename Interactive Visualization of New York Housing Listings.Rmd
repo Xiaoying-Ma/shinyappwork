@@ -1,0 +1,355 @@
+---
+title: "Interactive Shiny Dashboard for New York Housing Listings"
+author: "Xiaoying Ma"
+date: "06/28/2026"
+output: 
+  html_document: 
+    theme: yeti
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+    number_sections: yes
+    toc_collapsed: yes
+    code_folding: hide
+    code_download: yes
+    smooth_scroll: yes
+    highlight: tango
+---
+
+```{css echo = FALSE}
+/* ============ CSS Styling for Lecture Notes ============ */
+
+body {
+  font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.7;
+  color: #2d1b29;
+  background-color: #fdfafd;
+}
+
+#TOC::before {
+  content: "Table of Contents";
+  font-weight: bold;
+  font-size: 1.2em;
+  display: block;
+  color: navy;
+  margin-bottom: 10px;
+}
+
+
+div#TOC li {     /* table of content  */
+    list-style:upper-roman;
+    background-image:none;
+    background-repeat:none;
+    background-position:0;
+    /*font-weight: bold; */
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #6E3061;
+}
+
+
+h1.title {
+  font-size: 26px;
+  color: #6E3061;
+  text-align: left;
+}
+
+h4.author { /* Header 4 - and the author and data headers use this too  */
+  font-size: 18px;
+  /*font-family: "Times New Roman", Times, serif;*/
+  color: #6E3061;
+  text-align: left;
+}
+h4.date { /* Header 4 - and the author and data headers use this too  */
+  font-size: 18px;
+  /*font-family: "Times New Roman", Times, serif;*/
+  color: #6E3061;
+  text-align: left;
+}
+
+
+h1 {
+  color: #6E3061;
+  border-bottom: 3px solid #6E3061;
+  padding-bottom: 8px;
+  margin-top: 40px;
+  font-weight: bold;
+  font-size: 2.2rem;
+}
+
+h2 {
+  color: #6E3061;
+  border-left: 5px solid #6E3061;
+  padding-left: 12px;
+  margin-top: 30px;
+  font-weight: bold;
+  font-size: 1.8rem;
+}
+
+h3 {
+  color: #8b4a7d;
+  margin-top: 24px;
+  font-weight: bold;
+  font-size: 1.8m;
+}
+
+h4 {
+  color: #a05f92;
+  margin-top: 18px;
+  font-weight: bold;
+  font-size: 1.4rem;
+}
+
+code {
+  background-color: #f4edf3;
+  color: #4a2040;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.9em;
+  border: 1px solid #d4c0d1;
+}
+
+pre {
+  background-color: #f9f5f9;
+  border: 1px solid #d4c0d1;
+  border-left: 4px solid #6E3061;
+  border-radius: 6px;
+  padding: 14px;
+}
+
+pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+blockquote {
+  background-color: #f4edf3;
+  border-left: 4px solid #6E3061;
+  padding: 12px 18px;
+  margin: 16px 0;
+  border-radius: 0 6px 6px 0;
+  color: #4a2040;
+}
+
+.note-box {
+  background-color: #f0e6ee;
+  border: 1px solid #c49bb8;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 18px 0;
+}
+
+.note-box strong {
+  color: #6E3061;
+}
+
+.tip-box {
+  background-color: #e8f5e9;
+  border: 1px solid #81c784;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 18px 0;
+}
+
+.tip-box strong {
+  color: #2e7d32;
+}
+
+.warning-box {
+  background-color: #fff3e0;
+  border: 1px solid #ffb74d;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 18px 0;
+}
+
+.warning-box strong {
+  color: #e65100;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+table th {
+  background-color: #6E3061;
+  color: white;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+
+table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #d4c0d1;
+}
+
+table tr:nth-child(even) td {
+  background-color: #faf5f9;
+}
+
+table tr:hover td {
+  background-color: #f0e6ee;
+}
+
+.toc {
+  background-color: #faf5f9;
+  border: 1px solid #d4c0d1;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.figure {
+  border: 1px solid #e0d1db;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 16px 0;
+  box-shadow: 0 2px 8px rgba(110, 48, 97, 0.08);
+}
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,       
+                      warning = FALSE,   
+                      result = TRUE,   
+                      message = FALSE,
+                      comment = NA)
+```
+
+
+# Introduction 
+
+## Dataset Overview
+
+The New York Housing dataset contains housing listing information from New York. It includes property prices, property size, location, house type, bedrooms, bathrooms, and geographic coordinates. This dataset is useful for exploring housing market patterns and understanding how price varies by location, property size, and house type.
+
+## Data Characteristics
+
+The dataset contains 4,801 housing listings. Each observation represents one property listing.
+
+## Variables
+
+The dataset contains the following variables used for analysis and visualization.
+
+| Variable Name | Type | Unit | Description |
+|:--------------|:-----|:-----|:------------|
+| BROKERTITLE | Categorical | — | Title or role of the real estate broker |
+| TYPE | Categorical | — | Property type (Condo, House, Co-op, Townhouse, etc.) |
+| PRICE | Numerical | USD | Listing price of the property |
+| BEDS | Numerical | Count | Number of bedrooms |
+| BATH | Numerical | Count | Number of bathrooms |
+| PROPERTYSQFT | Numerical | Square Feet | Property size in square feet |
+| ADDRESS | Categorical | — | Property address |
+| STATE | Categorical | — | State abbreviation |
+| MAIN_ADDRESS | Categorical | — | Full property address |
+| ADMINISTRATIVE_AREA_LEVEL_2 | Categorical | — | County or administrative area |
+| LOCALITY | Categorical | — | Locality (city or neighborhood) |
+| SUBLOCALITY | Categorical | — | Sublocality within the locality |
+| STREET_NAME | Categorical | — | Street name |
+| LONG_NAME | Categorical | — | Full formatted address |
+| FORMATTED_ADDRESS | Categorical | — | Standardized address |
+
+
+## Derived Variables
+
+The following variables were created during data preprocessing for visualization purposes.
+
+| Variable Name | Type | Unit | Description |
+|:--------------|:-----|:-----|:------------|
+| PRICE_M | Numerical | Million USD | Listing price converted from dollars to millions |
+| LOG_PRICE | Numerical | Log Scale | Log10-transformed listing price |
+| PRICE_PER_SQFT | Numerical | USD / Sqft | Listing price divided by property size |
+
+
+# Interactive Shiny Dashboard for New York Housing Listings
+
+## Dashboard Overview
+
+The dashboard is developed using **R Shiny** and **ShinyDashboard**, providing an interactive environment for exploring the New York housing market. Users can filter property listings by location and property type while examining geographic distribution, neighborhood-level prices, price distributions, and the relationship between housing size and listing price. The application can be accessed through any web browser and updates all visualizations in real time.
+
+| Control | Description | Options |
+|:-------------------------|:-----------------------------------------|:--------------------------------------------------|
+| Locality Selector | Filters properties by locality | All Localities or individual localities |
+| Property Type Selector | Filters properties by housing type | All Types or individual property types |
+| Price Range Slider | Filters listings by price | Adjustable minimum and maximum listing price |
+| Bedrooms Filter | Filters properties by number of bedrooms | Adjustable bedroom range |
+| Bathrooms Filter | Filters properties by number of bathrooms | Adjustable bathroom range |
+| Property Size Slider | Filters properties by square footage | Adjustable property size range |
+
+## Visualization Panels
+
+**Panel 1: Interactive Property Map**
+
+* Displays the geographic distribution of housing listings.
+* Markers represent individual properties.
+* Clicking a marker reveals detailed property information, including price, property type, bedrooms, bathrooms, and size.
+* Users can zoom and pan to explore different regions.
+
+**Panel 2: Average Listing Price by Locality**
+
+* Displays the average listing price for each locality.
+* Localities are ranked from highest to lowest average price.
+* Helps users compare neighborhood-level housing markets.
+
+**Panel 3: Log Price Distribution by House Type**
+
+* Displays boxplots of log-transformed housing prices by property type.
+* Shows the median, quartiles, overall variability, and outliers.
+* Facilitates comparison of housing prices across different property types.
+
+**Panel 4: Property Size vs. Listing Price**
+
+* Displays the relationship between property size and log-transformed listing price.
+* Each point represents one property listing.
+* Helps identify trends between housing size and market value.
+
+
+## Technical Implementation
+
+
+
+* **Reactive Programming:** The dashboard uses Shiny's reactive expressions to automatically update all visualizations and summary statistics whenever users modify the filter selections.
+
+* **Dynamic Data Filtering:** Users can interactively filter housing listings by property type, locality, price range, number of bedrooms, bathrooms, and property size. All dashboard components respond immediately to the selected filters.
+
+* **Interactive Visualizations:** The dashboard utilizes **plotly** to provide interactive graphics with zoom, pan, hover tooltips, and figure download capabilities. Users can inspect detailed property information directly from the visualizations.
+
+* **Summary Statistics:** The dashboard automatically calculates and updates key performance indicators (KPIs), including total listings, average listing price, average property size, and average price per square foot based on the filtered data.
+
+* **Geographic Visualization:** The interactive housing map displays the spatial distribution of listings. Marker colors represent listing prices, with darker blue indicating higher-priced properties, while clicking a marker reveals detailed property information.
+
+* **Responsive Dashboard Layout:** The application is built using **shinydashboard**, organizing summary statistics, filters, and visualizations into a responsive layout that allows users to efficiently explore different aspects of the New York housing market.
+
+* **Interactive Deployment:** The completed dashboard is published on shinyapps.io, allowing users to access the application directly through a web browser without installing R or additional packages.
+
+---
+
+## Conclusion
+
+This project demonstrates how Shiny can be used to develop an interactive dashboard for exploring the New York housing market. By integrating dynamic filters, summary statistics, geographic visualization, and interactive charts, users can efficiently investigate housing prices, property characteristics, and neighborhood differences. The dashboard provides a practical example of how interactive data visualization can support exploratory data analysis and real estate decision-making.
+
+## The Completed App
+
+<center>
+
+### Interactive Shiny Dashboard
+
+https://xiaoyingma.shinyapps.io/shiney/
+
+</center>
+
+<br>
+
+<center>
+
+<a href="https://xiaoyingma.shinyapps.io/shiney/">
+<img src="dashboard.png" width="95%">
+</a>
+
